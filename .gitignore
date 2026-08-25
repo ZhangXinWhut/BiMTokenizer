@@ -1,0 +1,25 @@
+# Python caches and generated files
+__pycache__/
+*.py[cod]
+*.so
+
+# macOS metadata
+.DS_Store
+
+# Local model checkpoints
+weights/
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+
+# Inference inputs and outputs
+input_wavs/
+output_wavs/
+
+# Logs and local environments
+*.log
+.venv/
+venv/
+env/
+.env

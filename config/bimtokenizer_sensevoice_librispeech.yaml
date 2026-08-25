@@ -1,0 +1,91 @@
+# ============================================================================
+# BiMTokenizer — Mamba1 + RSLQ【16kHz · SenseVoice SED/SSRR 训练配套】推理配置
+# ----------------------------------------------------------------------------
+# 与 ExtBiMamba_Codec_SenseVoice 训练 checkpoint 对齐：
+#   16k / 80-mel / rslq / 5 codebooks / full Leech 196560
+# 码本由 codebook_path 外部 .npy 加载，不保存在 checkpoint 内。
+#
+# 用法：
+#   CUDA_VISIBLE_DEVICES=0 python inference.py \
+#     --config_path config/bimtokenizer_sensevoice_librispeech.yaml \
+#     --checkpoint_path weights/bimtokenizer_sensevoice_librispeech.pt \
+#     --input_dir /path/to/wavs \
+#     --output_dir recon_sensevoice \
+#     --device cuda --batch_size 1
+# ============================================================================
+
+sample_rate: &sample_rate 16000
+
+model:
+  sample_rate: *sample_rate
+  encoder_downsample_rate: 1280
+  decoder_upsample_rate: 1280
+  quantizer_type: "rslq"
+
+  feature_extractor:
+    chunk_length: 30
+    feature_size: 80
+    sampling_rate: *sample_rate
+    hop_length: 160
+    n_fft: 400
+    n_samples: 480000
+    nb_max_frames: 3000
+    padding_side: "right"
+    padding_value: 0.0
+    return_attention_mask: true
+
+  encoder: &mamba_block
+    num_mel_bins: 80
+    stride_size: 2
+    kernel_size: 3
+    d_model: 768
+    mamba_version: 1
+    d_state: 16
+    d_conv: 4
+    expand: 2
+    dt_rank: "auto"
+    d_intermediate: 1536
+    bias: True
+    fused_add_norm: False
+    rms_norm: True
+    norm_epsilon: 0.00001
+    initializer_cfg: null
+    residual_in_fp32: True
+    n_mamba: 8
+    bidirectional: True
+    bimamba_type: v3
+
+  decoder:
+    <<: *mamba_block
+
+  downsample:
+    in_dim: 768
+    latent_dim: 128
+    stack_factor: 4
+    hidden_dim: 512
+    proj_type: "linear"
+    num_heads: 8
+
+  quantizer:
+    num_codebooks: 5
+    embedding_dim: 128
+    codebook_size: 196560
+    codebook_path: "bimtokenizer/modules/quantizer/cache/leech_lattices_normalized.npy"
+    leech_type: "full"
+
+  upsample:
+    latent_dim: 128
+    out_dim: 768
+    stack_factor: 4
+    hidden_dim: 512
+    proj_type: "linear"
+    num_heads: 8
+
+  vocos:
+    input_channels: 80
+    dim: 512
+    intermediate_dim: 4096
+    num_layers: 12
+    n_fft: 640
+    hop_size: 160
+    padding: "same"

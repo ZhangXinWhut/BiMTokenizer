@@ -1,0 +1,94 @@
+# ============================================================================
+# BiMTokenizer — Mamba1 + RSLQ【16kHz 版】推理专用配置
+# ----------------------------------------------------------------------------
+# 16k / 80-mel / rslq_noscale / 语义码本 32768 + 声学 4096
+# quantizer 码本路径与大小必须与训练逐字一致。
+#
+# 用法：
+#   CUDA_VISIBLE_DEVICES=0 python inference.py \
+#     --config_path config/bimtokenizer_sensevoice_32768_4096_librispeech.yaml \
+#     --checkpoint_path weights/bimtokenizer_sensevoice_32768_4096_librispeech.pt \
+#     --input_dir /path/to/wavs \
+#     --output_dir /path/to/output \
+#     --device cuda --batch_size 1
+# ============================================================================
+
+sample_rate: &sample_rate 16000
+
+model:
+  sample_rate: *sample_rate
+  encoder_downsample_rate: 1280        # 160 × 2 × 4（= mel_hop × stride × stack）
+  decoder_upsample_rate: 1280
+  quantizer_type: "rslq_noscale"
+
+  feature_extractor:
+    chunk_length: 30
+    feature_size: 80                   # 80 mel @ 16k（0–8kHz）
+    sampling_rate: *sample_rate
+    hop_length: 160                    # 16000/160 = 100Hz mel
+    n_fft: 400
+    n_samples: 480000                  # chunk_length(30) × 16000
+    nb_max_frames: 3000                # = n_samples / hop_length
+    padding_side: "right"
+    padding_value: 0.0
+    return_attention_mask: true
+
+  encoder: &mamba_block
+    num_mel_bins: 80                   # = feature_size
+    stride_size: 2
+    kernel_size: 3
+    d_model: 768
+    mamba_version: 1
+    d_state: 16
+    d_conv: 4
+    expand: 2
+    dt_rank: "auto"
+    d_intermediate: 1536
+    bias: True
+    fused_add_norm: False
+    rms_norm: True
+    norm_epsilon: 0.00001
+    initializer_cfg: null
+    residual_in_fp32: True
+    n_mamba: 8
+    bidirectional: True
+    bimamba_type: v3
+
+  decoder:
+    <<: *mamba_block
+
+  downsample:
+    in_dim: 768
+    latent_dim: 128
+    stack_factor: 4
+    hidden_dim: 512
+    proj_type: "linear"
+    num_heads: 8
+
+  quantizer:
+    num_codebooks: 7                       # 1 语义 + 6 声学
+    embedding_dim: 128
+    codebook_size: 4096
+    codebook_path: "bimtokenizer/modules/quantizer/cache/leech_subset_4096.npy"
+    leech_type: "4"
+    # 码率：12.5fps × (log2(32768)=15 + 6×log2(4096)=72) = 12.5 × 87 = 1087.5 bps
+    semantic_codebook_size: 32768
+    semantic_codebook_path: "bimtokenizer/modules/quantizer/cache/leech_subset_32768.npy"
+    semantic_leech_type: null
+
+  upsample:
+    latent_dim: 128
+    out_dim: 768
+    stack_factor: 4
+    hidden_dim: 512
+    proj_type: "linear"
+    num_heads: 8
+
+  vocos:
+    input_channels: 80                 # = feature_size / decoder mel 通道
+    dim: 512
+    intermediate_dim: 4096
+    num_layers: 12
+    n_fft: 640
+    hop_size: 160                      # 必须 == mel_hop（160）
+    padding: "same"

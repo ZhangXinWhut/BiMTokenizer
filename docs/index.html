@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BiMTokenizer: Preserving Semantic-Acoustic Balance in Low-Bitrate Speech Tokenization via Bidirectional State-Space Modeling</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Geist:wght@300;400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --bg: #f7f5f0;
+  --bg-soft: #efece4;
+  --ink: #1a1a1a;
+  --ink-soft: #595550;
+  --rule: #d8d3c8;
+  --accent: #6b2d2d;
+  --accent-soft: #f0e6e0;
+  --highlight: #fff8a8;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg);color:var(--ink);font-family:'Geist',-apple-system,sans-serif;font-weight:400;line-height:1.6;-webkit-font-smoothing:antialiased}
+.container{max-width:1100px;margin:0 auto;padding:64px 32px 96px}
+
+.eyebrow{font-family:'Geist Mono',monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:24px}
+h1.title{font-family:'Fraunces',serif;font-weight:500;font-size:clamp(38px,5vw,60px);line-height:1.05;letter-spacing:-.02em;margin-bottom:24px;font-variation-settings:"opsz" 144,"SOFT" 50}
+h1.title em{font-style:italic;font-weight:400;color:var(--accent)}
+.authors{font-size:15px;color:var(--ink-soft);margin-bottom:36px;font-style:italic}
+.links{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:48px}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:9px 16px;border:1px solid var(--ink);background:var(--ink);color:var(--bg);font-size:13px;font-weight:500;text-decoration:none;border-radius:999px;transition:all .15s ease}
+.btn:hover{background:transparent;color:var(--ink)}
+.btn.ghost{background:transparent;color:var(--ink)}
+.btn.ghost:hover{background:var(--ink);color:var(--bg)}
+.btn[aria-disabled="true"]{opacity:.45;pointer-events:none;cursor:not-allowed}
+
+section{margin-top:72px}
+h2{font-family:'Fraunces',serif;font-weight:500;font-size:32px;letter-spacing:-.01em;margin-bottom:8px}
+h2 .num{font-family:'Geist Mono',monospace;font-size:13px;color:var(--accent);vertical-align:top;margin-right:10px;letter-spacing:.05em}
+.section-desc{color:var(--ink-soft);font-size:15px;margin-bottom:32px;max-width:70ch}
+p{margin-bottom:14px;max-width:72ch}
+hr{border:none;border-top:1px solid var(--rule);margin:0}
+
+.figure{background:#fff;border:1px solid var(--rule);border-radius:8px;padding:28px;text-align:center}
+.figure img{max-width:100%;height:auto;display:block;margin:0 auto}
+.figure-caption{font-size:13px;color:var(--ink-soft);font-style:italic;margin-top:20px;text-align:center;max-width:68ch;margin-left:auto;margin-right:auto;line-height:1.55}
+.figure-caption strong{color:var(--ink);font-weight:500;font-style:normal}
+
+.table-wrap{margin-top:20px;border:1px solid var(--rule);border-radius:8px;overflow-x:auto;background:#fff}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:980px;table-layout:fixed}
+thead{background:var(--bg-soft)}
+th{font-family:'Geist Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--ink-soft);text-align:center;padding:14px 12px;font-weight:500;border-bottom:1px solid var(--rule);white-space:nowrap}
+th.method-col{text-align:left;padding-left:20px;width:280px}
+th:not(.method-col){width:175px}
+td{padding:10px 12px;border-bottom:1px solid var(--rule);vertical-align:middle;text-align:center}
+td.method-col{padding-left:20px;font-weight:500;font-size:13px;white-space:nowrap;text-align:left}
+td.method-col .bps{display:inline-block;margin-left:6px;padding:1px 6px;background:var(--bg-soft);color:var(--ink-soft);font-family:'Geist Mono',monospace;font-size:10px;font-weight:400;border-radius:3px;letter-spacing:.02em}
+tr:last-child td{border-bottom:none}
+tr.gt-row td{background:#fbfaf6}
+tr.gt-row td.method-col{font-style:italic;color:var(--ink-soft)}
+tr.ours-row td{background:var(--accent-soft)}
+tr.ours-row td.method-col{color:var(--accent)}
+tr.ours-row td.method-col::before{content:"★ ";color:var(--accent)}
+tr.divider td{padding:0;height:1px;background:var(--ink);opacity:.15;border-bottom:none}
+td audio{width:150px;height:32px;display:block;margin:0 auto}
+.note{font-size:13px;color:var(--ink-soft);margin-top:14px;font-style:italic}
+
+@media (max-width:720px){.container{padding:40px 18px 64px}}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <div class="eyebrow">Open-source research project · Speech tokenization</div>
+  <h1 class="title">BiMTokenizer: <em>Preserving Semantic-Acoustic Balance in Low-Bitrate Speech Tokenization via Bidirectional State-Space Modeling</em></h1>
+  <p class="authors">Xin Zhang · Lin Li · Chuanbo Liu · Jianquan Liu · Kong Aik Lee</p>
+
+  <div class="links">
+    <a class="btn ghost" href="https://github.com/ZhangXinWhut/BiMTokenizer">Code</a>
+    <a class="btn ghost" href="#test-clean">↓ test-clean Samples</a>
+    <a class="btn ghost" href="#test-other">↓ test-other Samples</a>
+  </div>
+
+  <hr>
+
+  <section>
+    <h2><span class="num">01</span>Architecture</h2>
+    <p class="section-desc">
+      A single-tower acoustic codec trained end-to-end with discriminators, supervised
+      additionally by a frozen semantic encoder (Whisper / SenseVoice) via reconstruction
+      alignment and cosine-similarity objectives.
+    </p>
+    <div class="figure">
+      <img src="assets/figs/arch.png" alt="BiMTokenizer architecture diagram">
+      <div class="figure-caption">
+        <strong>Figure 1.</strong> Overview of BiMTokenizer. The acoustic codec encodes a
+        mel-spectrogram via stacked Mamba blocks into latent <em>z<sub>c</sub></em>,
+        quantizes it through Residual Spherical Leech Quantization, and decodes through a
+        Vocos head. During training, a frozen semantic encoder enforces alignment between
+        the original and reconstructed speech in the semantic space (dashed paths are
+        training-only).
+      </div>
+    </div>
+  </section>
+
+  <section id="test-clean">
+    <h2><span class="num">02</span>Reconstruction · LibriSpeech <em style="font-style:italic">test-clean</em></h2>
+    <p class="section-desc">
+      Each column is the same utterance reconstructed by a different codec. Bitrates are
+      reported next to each method. Our variants are highlighted in red.
+    </p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th class="method-col">Method</th>
+            <th>Sample 1</th><th>Sample 2</th><th>Sample 3</th><th>Sample 4</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="gt-row">
+            <td class="method-col">Ground Truth</td>
+            <td><audio controls preload="none" src="assets/audio/test-clean/1089-134686-0006.flac"></audio></td>
+            <td><audio controls preload="none" src="assets/audio/test-clean/121-121726-0000.flac"></audio></td>
+            <td><audio controls preload="none" src="assets/audio/test-clean/237-126133-0001.flac"></audio></td>
+            <td><audio controls preload="none" src="assets/audio/test-clean/672-122797-0045.flac"></audio></td>
+          </tr>
+          <tr class="divider"><td colspan="5"></td></tr>
+          <tr><td class="method-col">EnCodec <span class="bps">1500 bps</span></td>
+            <td><audio controls preload="none" src="assets/audio/test-clean/s1_encodec.wav"></audio></td>
+            <td><audio controls preload="none" src="assets/audio/test-clean/s2_encodec.wav"></audio></td>
+            <td><audio controls preload="none" src="assets/audio/test-clean/s3_encodec.wav"></audio></td>
+            <td><audio controls preload="none" src="assets/audio/test-clean/s4_encodec.wav"></audio></td></tr>
+          <tr><td class="method-col">DAC <span class="bps">1500 bps</span></td>
+            <td><audio controls preload="none" src="assets/audio/test-clean/s1_dac.wav"></audio></td>
+            <td><audio controls preload="none" src="assets/audio/test-clean/s2_dac.wav"></audio></td>
+            <td><audio controls preload="none" src="assets/audio/test-clean/s3_dac.wav"></audio></td>
+            <td><audio controls preload="none" src="assets/audio/test-clean/s4_dac.wav"></audio></td></tr>
+          <tr><td class="method-col">SpeechTokenizer <span class="bps">1000 bps</span></td>
+            <td><audio controls preload="none" src="assets/audio/test-clean/s1_speechtokenizer.wav"></audio></td>
+            <td><audio controls preload="none" src="assets/audio/test-clean/s2_speechtokenizer.wav"></audio></td>
+            <td><audio controls preload="none" src="assets/audio/test-clean/s3_speechtokenizer.wav"></audio></td>
+            <td><audio controls preload="none" src="assets/audio/test-clean/s4_speechtokenizer.wav"></audio></td></tr>
+          <tr><td class="method-col">BigCodec <span class="bps">1040 bps</span></td>
+            <td><audio controls preload="none" src="assets/audio/test-clean/s1_bigcodec.wav"></audio></td>
+            <td><audio controls preload="none" src="assets/audio/test-clean/s2_bigcodec.wav"></audio></td>
+            <td><audio controls preload="none" src="assets/audio/test-clean/s3_bigcodec.wav"></audio></td>
+            <td><audio controls preload="none" src="assets/audio/test-clean/s4_bigcodec.wav"></audio></td></tr>
+          <tr><td class="method-col">Mimi <span class="bps">1100 bps</span></td>
+            <td><audio controls preload="none" src="assets/audio/test-clean/s1_mimi.wav"></audio></td>
+            <td><audio controls preload="none" src="assets/audio/test-clean/s2_mimi.wav"></audio></td>
+            <td><audio controls preload="none" src="assets/audio/test-clean/s3_mimi.wav"></audio></td>
+            <td><audio controls preload="none" src="assets/audio/test-clean/s4_mimi.wav"></audio></td></tr>
+          <tr><td class="method-col">XCodec <span class="bps">1000 bps</span></td>
+            <td><audio controls preload="none" src="assets/audio/test-clean/s1_xcodec.wav"></audio></td>
+            <td><audio controls preload="none" src="assets/audio/test-clean/s2_xcodec.wav"></audio></td>
+            <td><audio controls preload="none" src="assets/audio/test-clean/s3_xcodec.wav"></audio></td>
+            <td><audio controls preload="none" src="assets/audio/test-clean/s4_xcodec.wav"></audio></td></tr>
+          <tr><td class="method-col">XCodec2.0 <span class="bps">800 bps</span></td>
+            <td><audio controls preload="none" src="assets/audio/test-clean/s1_xcodec2.wav"></audio></td>
+            <td><audio controls preload="none" src="assets/audio/test-clean/s2_xcodec2.wav"></audio></td>
+            <td><audio controls preload="none" src="assets/audio/test-clean/s3_xcodec2.wav"></audio></td>
+            <td><audio controls preload="none" src="assets/audio/test-clean/s4_xcodec2.wav"></audio></td></tr>
+          <tr><td class="method-col">DualCodec <span class="bps">1075 bps</span></td>
+            <td><audio controls preload="none" src="assets/audio/test-clean/s1_dualcodec.wav"></audio></td>
+            <td><audio controls preload="none" src="assets/audio/test-clean/s2_dualcodec.wav"></audio></td>
+            <td><audio controls preload="none" src="assets/audio/test-clean/s3_dualcodec.wav"></audio></td>
+            <td><audio controls preload="none" src="assets/audio/test-clean/s4_dualcodec.wav"></audio></td></tr>
+          <tr><td class="method-col">XY-Tokenizer <span class="bps">1000 bps</span></td>
+            <td><audio controls preload="none" src="assets/audio/test-clean/s1_xytokenizer.wav"></audio></td>
+            <td><audio controls preload="none" src="assets/audio/test-clean/s2_xytokenizer.wav"></audio></td>
+            <td><audio controls preload="none" src="assets/audio/test-clean/s3_xytokenizer.wav"></audio></td>
+            <td><audio controls preload="none" src="assets/audio/test-clean/s4_xytokenizer.wav"></audio></td></tr>
+          <tr><td class="method-col">SimWhisper-Codec <span class="bps">1100 bps</span></td>
+            <td><audio controls preload="none" src="assets/audio/test-clean/s1_simwhisper.wav"></audio></td>
+            <td><audio controls preload="none" src="assets/audio/test-clean/s2_simwhisper.wav"></audio></td>
+            <td><audio controls preload="none" src="assets/audio/test-clean/s3_simwhisper.wav"></audio></td>
+            <td><audio controls preload="none" src="assets/audio/test-clean/s4_simwhisper.wav"></audio></td></tr>
+          <tr class="divider"><td colspan="5"></td></tr>
+          <tr class="ours-row"><td class="method-col">BiMTokenizer-Whisper <span class="bps">1100 bps</span></td>
+            <td><audio controls preload="none" src="assets/audio/test-clean/s1_bim_whisper.wav"></audio></td>
+            <td><audio controls preload="none" src="assets/audio/test-clean/s2_bim_whisper.wav"></audio></td>
+            <td><audio controls preload="none" src="assets/audio/test-clean/s3_bim_whisper.wav"></audio></td>
+            <td><audio controls preload="none" src="assets/audio/test-clean/s4_bim_whisper.wav"></audio></td></tr>
+          <tr class="ours-row"><td class="method-col">BiMTokenizer-SenseVoice <span class="bps">1100 bps</span></td>
+            <td><audio controls preload="none" src="assets/audio/test-clean/s1_bim_sensevoice.wav"></audio></td>
+            <td><audio controls preload="none" src="assets/audio/test-clean/s2_bim_sensevoice.wav"></audio></td>
+            <td><audio controls preload="none" src="assets/audio/test-clean/s3_bim_sensevoice.wav"></audio></td>
+            <td><audio controls preload="none" src="assets/audio/test-clean/s4_bim_sensevoice.wav"></audio></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note">All baselines reproduced using official pre-trained checkpoints at their respective bitrates.</p>
+  </section>
+
+  <section id="test-other">
+    <h2><span class="num">03</span>Reconstruction · LibriSpeech <em style="font-style:italic">test-other</em></h2>
+    <p class="section-desc">
+      The noisier <em>test-other</em> set, drawn from speakers and recording conditions
+      held out from training.
+    </p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th class="method-col">Method</th>
+            <th>Sample 1</th><th>Sample 2</th><th>Sample 3</th><th>Sample 4</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="gt-row">
+            <td class="method-col">Ground Truth</td>
+            <td><audio controls preload="none" src="assets/audio/test-other/6128-63241-0011.flac"></audio></td>
+            <td><audio controls preload="none" src="assets/audio/test-other/5764-299665-0076.flac"></audio></td>
+            <td><audio controls preload="none" src="assets/audio/test-other/4350-9170-0052.flac"></audio></td>
+            <td><audio controls preload="none" src="assets/audio/test-other/5484-24318-0006.flac"></audio></td>
+          </tr>
+          <tr class="divider"><td colspan="5"></td></tr>
+          <tr><td class="method-col">EnCodec <span class="bps">1500 bps</span></td>
+            <td><audio controls preload="none" src="assets/audio/test-other/s1_encodec.wav"></audio></td>
+            <td><audio controls preload="none" src="assets/audio/test-other/s2_encodec.wav"></audio></td>
+            <td><audio controls preload="none" src="assets/audio/test-other/s3_encodec.wav"></audio></td>
+            <td><audio controls preload="none" src="assets/audio/test-other/s4_encodec.wav"></audio></td></tr>
+          <tr><td class="method-col">DAC <span class="bps">1500 bps</span></td>
+            <td><audio controls preload="none" src="assets/audio/test-other/s1_dac.wav"></audio></td>
+            <td><audio controls preload="none" src="assets/audio/test-other/s2_dac.wav"></audio></td>
+            <td><audio controls preload="none" src="assets/audio/test-other/s3_dac.wav"></audio></td>
+            <td><audio controls preload="none" src="assets/audio/test-other/s4_dac.wav"></audio></td></tr>
+          <tr><td class="method-col">SpeechTokenizer <span class="bps">1000 bps</span></td>
+            <td><audio controls preload="none" src="assets/audio/test-other/s1_speechtokenizer.wav"></audio></td>
+            <td><audio controls preload="none" src="assets/audio/test-other/s2_speechtokenizer.wav"></audio></td>
+            <td><audio controls preload="none" src="assets/audio/test-other/s3_speechtokenizer.wav"></audio></td>
+            <td><audio controls preload="none" src="assets/audio/test-other/s4_speechtokenizer.wav"></audio></td></tr>
+          <tr><td class="method-col">BigCodec <span class="bps">1040 bps</span></td>
+            <td><audio controls preload="none" src="assets/audio/test-other/s1_bigcodec.wav"></audio></td>
+            <td><audio controls preload="none" src="assets/audio/test-other/s2_bigcodec.wav"></audio></td>
+            <td><audio controls preload="none" src="assets/audio/test-other/s3_bigcodec.wav"></audio></td>
+            <td><audio controls preload="none" src="assets/audio/test-other/s4_bigcodec.wav"></audio></td></tr>
+          <tr><td class="method-col">Mimi <span class="bps">1100 bps</span></td>
+            <td><audio controls preload="none" src="assets/audio/test-other/s1_mimi.wav"></audio></td>
+            <td><audio controls preload="none" src="assets/audio/test-other/s2_mimi.wav"></audio></td>
+            <td><audio controls preload="none" src="assets/audio/test-other/s3_mimi.wav"></audio></td>
+            <td><audio controls preload="none" src="assets/audio/test-other/s4_mimi.wav"></audio></td></tr>
+          <tr><td class="method-col">DualCodec <span class="bps">1075 bps</span></td>
+            <td><audio controls preload="none" src="assets/audio/test-other/s1_dualcodec.wav"></audio></td>
+            <td><audio controls preload="none" src="assets/audio/test-other/s2_dualcodec.wav"></audio></td>
+            <td><audio controls preload="none" src="assets/audio/test-other/s3_dualcodec.wav"></audio></td>
+            <td><audio controls preload="none" src="assets/audio/test-other/s4_dualcodec.wav"></audio></td></tr>
+          <tr><td class="method-col">XY-Tokenizer <span class="bps">1000 bps</span></td>
+            <td><audio controls preload="none" src="assets/audio/test-other/s1_xytokenizer.wav"></audio></td>
+            <td><audio controls preload="none" src="assets/audio/test-other/s2_xytokenizer.wav"></audio></td>
+            <td><audio controls preload="none" src="assets/audio/test-other/s3_xytokenizer.wav"></audio></td>
+            <td><audio controls preload="none" src="assets/audio/test-other/s4_xytokenizer.wav"></audio></td></tr>
+          <tr class="divider"><td colspan="5"></td></tr>
+          <tr class="ours-row"><td class="method-col">BiMTokenizer-Whisper <span class="bps">1100 bps</span></td>
+            <td><audio controls preload="none" src="assets/audio/test-other/s1_bim_whisper.wav"></audio></td>
+            <td><audio controls preload="none" src="assets/audio/test-other/s2_bim_whisper.wav"></audio></td>
+            <td><audio controls preload="none" src="assets/audio/test-other/s3_bim_whisper.wav"></audio></td>
+            <td><audio controls preload="none" src="assets/audio/test-other/s4_bim_whisper.wav"></audio></td></tr>
+          <tr class="ours-row"><td class="method-col">BiMTokenizer-SenseVoice <span class="bps">1100 bps</span></td>
+            <td><audio controls preload="none" src="assets/audio/test-other/s1_bim_sensevoice.wav"></audio></td>
+            <td><audio controls preload="none" src="assets/audio/test-other/s2_bim_sensevoice.wav"></audio></td>
+            <td><audio controls preload="none" src="assets/audio/test-other/s3_bim_sensevoice.wav"></audio></td>
+            <td><audio controls preload="none" src="assets/audio/test-other/s4_bim_sensevoice.wav"></audio></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>
