@@ -9,7 +9,7 @@
 </p>
 
 <p>
-  <a href="https://github.com/ZhangXinWhut/BiMTokenizer"><img src="https://img.shields.io/badge/🎧_Demo-Online-brightgreen" alt="Demo"></a>
+  <a href="https://zhangxinwhut.github.io/BiMTokenizer/"><img src="https://img.shields.io/badge/🎧_Demo-Online-brightgreen" alt="Demo"></a>
   <a href="https://huggingface.co"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Model%20Page-yellow" alt="Hugging Face"></a>
 </p>
 
