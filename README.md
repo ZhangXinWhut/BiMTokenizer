@@ -10,7 +10,7 @@
 
 <p>
   <a href="https://zhangxinwhut.github.io/BiMTokenizer/"><img src="https://img.shields.io/badge/🎧_Demo-Online-brightgreen" alt="Demo"></a>
-  <a href="https://huggingface.co"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Model%20Page-yellow" alt="Hugging Face"></a>
+  <a href="https://huggingface.co/ZhangXinWhut/BiMTokenizer"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Model%20Page-yellow" alt="Hugging Face"></a>
 </p>
 
 *A bidirectional Mamba codec with residual spherical Leech quantization (RSLQ) for 16 kHz speech at ~1.1 kbps.*
@@ -75,23 +75,23 @@ python -c "import torch, causal_conv1d, mamba_ssm; print(torch.cuda.get_device_n
 
 ## Available Models 🗂️
 
-The following three checkpoints are planned for release:
+The following three checkpoints are available on [Hugging Face](https://huggingface.co/ZhangXinWhut/BiMTokenizer):
 
 | Model | Checkpoint | Quantizer | Bitrate |
 |:------|:-----------|:----------|:-------:|
-| BiMTokenizer-Whisper | `bimtokenizer_whisper_librispeech.pt` | RSLQ, 5 × 196560 | 1100 bps |
-| BiMTokenizer-SenseVoice | `bimtokenizer_sensevoice_librispeech.pt` | RSLQ, 5 × 196560 | 1100 bps |
-| BiMTokenizer-SenseVoice (32768+4096) | `bimtokenizer_sensevoice_32768_4096_librispeech.pt` | 32768 + 4096 | 1087.5 bps |
+| BiMTokenizer-Whisper | [`bimtokenizer_whisper_librispeech.pt`](https://huggingface.co/ZhangXinWhut/BiMTokenizer/blob/main/whisper/bimtokenizer_whisper_librispeech.pt) | RSLQ, 5 × 196560 | 1100 bps |
+| BiMTokenizer-SenseVoice | [`bimtokenizer_sensevoice_librispeech.pt`](https://huggingface.co/ZhangXinWhut/BiMTokenizer/blob/main/sensevoice/bimtokenizer_sensevoice_librispeech.pt) | RSLQ, 5 × 196560 | 1100 bps |
+| BiMTokenizer-SenseVoice (32768+4096) | [`bimtokenizer_sensevoice_32768_4096_librispeech.pt`](https://huggingface.co/ZhangXinWhut/BiMTokenizer/blob/main/sensevoice-32768-4096/bimtokenizer_sensevoice_32768_4096_librispeech.pt) | 32768 + 4096 | 1087.5 bps |
 
 Codebooks are loaded from `bimtokenizer/modules/quantizer/cache/*.npy` (not stored inside the `.pt` file).
 
 ### Download Model Weights
 
-Place checkpoints under `./weights/` (Hugging Face link TBD):
+Download all checkpoints and their configurations from Hugging Face:
 
 ```bash
-mkdir -p ./weights
-# huggingface-cli download <org/model> <file.pt> --local-dir ./weights/
+huggingface-cli download ZhangXinWhut/BiMTokenizer \
+  --local-dir ./weights/BiMTokenizer
 ```
 
 ### Inference
@@ -99,7 +99,7 @@ mkdir -p ./weights
 ```bash
 python inference.py \
   --config_path config/bimtokenizer_whisper_librispeech.yaml \
-  --checkpoint_path weights/bimtokenizer_whisper_librispeech.pt \
+  --checkpoint_path weights/BiMTokenizer/whisper/bimtokenizer_whisper_librispeech.pt \
   --input_dir /path/to/LibriSpeech/test-clean \
   --output_dir output_wavs \
   --device cuda --batch_size 1
