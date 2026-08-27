@@ -119,6 +119,4 @@ for making their work publicly available.
 
 ## 📜 License
 
-This project is licensed under the Apache 2.0 License.
-
-Copyright 2026 Xin Zhang, Wuhan University of Technology.
+This project is licensed under the [Apache License 2.0](LICENSE).
