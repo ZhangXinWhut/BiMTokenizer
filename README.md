@@ -38,6 +38,7 @@ All results below are measured on LibriSpeech `test-clean` at 16 kHz. WER is mea
 | **BiMTokenizer-Whisper** | 196560 | 1100 bps | **0.87** | **0.95** | **3.56** | **3.03** | **4.21** | **2.44** |
 | **BiMTokenizer-SenseVoice** | 196560 | 1100 bps | 0.85 | 0.94 | 3.45 | 2.85 | 4.18 | 2.53 |
 | **BiMTokenizer-SenseVoice (32768+4096)** | 32768 + 4096 | 1087.5 bps | 0.86 | 0.943 | 3.459 | 2.893 | 4.20 | 2.48 |
+| **BiMTokenizer-SenseVoice (8×2048)** | 8 × 2048 | 1100 bps | 0.87 | 0.94 | 3.46 | 2.89 | 4.15 | 2.52 |
 
 ## 🚀 Quick Start
 
@@ -75,13 +76,14 @@ python -c "import torch, causal_conv1d, mamba_ssm; print(torch.cuda.get_device_n
 
 ## Available Models 🗂️
 
-The following three checkpoints are available on [Hugging Face](https://huggingface.co/ZhangXinWhut/BiMTokenizer):
+The following four checkpoints are available on [Hugging Face](https://huggingface.co/ZhangXinWhut/BiMTokenizer):
 
 | Model | Checkpoint | Quantizer | Bitrate |
 |:------|:-----------|:----------|:-------:|
 | BiMTokenizer-Whisper | [`bimtokenizer_whisper_librispeech.pt`](https://huggingface.co/ZhangXinWhut/BiMTokenizer/blob/main/whisper/bimtokenizer_whisper_librispeech.pt) | RSLQ, 5 × 196560 | 1100 bps |
 | BiMTokenizer-SenseVoice | [`bimtokenizer_sensevoice_librispeech.pt`](https://huggingface.co/ZhangXinWhut/BiMTokenizer/blob/main/sensevoice/bimtokenizer_sensevoice_librispeech.pt) | RSLQ, 5 × 196560 | 1100 bps |
 | BiMTokenizer-SenseVoice (32768+4096) | [`bimtokenizer_sensevoice_32768_4096_librispeech.pt`](https://huggingface.co/ZhangXinWhut/BiMTokenizer/blob/main/sensevoice-32768-4096/bimtokenizer_sensevoice_32768_4096_librispeech.pt) | 32768 + 4096 | 1087.5 bps |
+| BiMTokenizer-SenseVoice (8×2048) | [`bimtokenizer_sensevoice_2048_librispeech.pt`](https://huggingface.co/ZhangXinWhut/BiMTokenizer/blob/main/sensevoice-2048/bimtokenizer_sensevoice_2048_librispeech.pt) | RSLQ-no-scale, 8 × 2048 | 1100 bps |
 
 Codebooks are loaded from `bimtokenizer/modules/quantizer/cache/*.npy` (not stored inside the `.pt` file).
 
@@ -109,6 +111,14 @@ Reconstructed wavs are written to `--output_dir` (default `output_wavs/`).
 
 ## 🙏 Acknowledgements
 
+This project builds on [Vim](https://github.com/hustvl/Vim) and
+[npq-vit](https://github.com/zhaoyue-zephyrus/npq-vit). We thank their authors
+for making their work publicly available.
+
 ## 📝 Citation
 
 ## 📜 License
+
+This project is licensed under the Apache 2.0 License.
+
+Copyright 2026 Xin Zhang, Wuhan University of Technology.
