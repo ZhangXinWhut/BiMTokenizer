@@ -10,6 +10,7 @@
 
 <p>
   <a href="https://zhangxinwhut.github.io/BiMTokenizer/"><img src="https://img.shields.io/badge/🎧_Demo-Online-brightgreen" alt="Demo"></a>
+  <a href="https://arxiv.org/abs/2609.00562"><img src="https://img.shields.io/badge/Paper-ArXiv-red" alt="Paper"></a>
   <a href="https://huggingface.co/ZhangXinWhut/BiMTokenizer"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Model%20Page-yellow" alt="Hugging Face"></a>
 </p>
 
@@ -116,6 +117,18 @@ This project builds on [Vim](https://github.com/hustvl/Vim) and
 for making their work publicly available.
 
 ## 📝 Citation
+
+```bibtex
+@misc{zhang2026bimtokenizerpreservingsemanticacousticbalance,
+  title={BiMTokenizer: Preserving Semantic-Acoustic Balance in Low-Bitrate Speech Tokenization via Bidirectional State-Space Modeling},
+  author={Xin Zhang and Lin Li and Chuanbo Liu and Jianquan Liu and Kong Aik Lee},
+  year={2026},
+  eprint={2609.00562},
+  archivePrefix={arXiv},
+  primaryClass={cs.SD},
+  url={https://arxiv.org/abs/2609.00562}
+}
+```
 
 ## 📜 License
 
