@@ -118,6 +118,8 @@ for making their work publicly available.
 
 ## 📝 Citation
 
+If you find this work useful in your research, please cite our paper:
+
 ```bibtex
 @misc{zhang2026bimtokenizerpreservingsemanticacousticbalance,
   title={BiMTokenizer: Preserving Semantic-Acoustic Balance in Low-Bitrate Speech Tokenization via Bidirectional State-Space Modeling},
