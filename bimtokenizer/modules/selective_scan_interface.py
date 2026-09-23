@@ -43,10 +43,29 @@ import selective_scan_cuda
 # Utilities
 # ============================================================================
 
+def build_valid_time_flip_indices(
+    lengths: Tensor,
+    seq_len: int,
+    device: Optional[torch.device] = None,
+) -> Tensor:
+    """Build reusable ``(B, seq_len)`` indices that reverse valid time only."""
+    if device is None:
+        device = lengths.device
+    lengths = lengths.to(device=device, dtype=torch.long)
+    arange = torch.arange(seq_len, device=device).unsqueeze(0).expand(lengths.shape[0], -1)
+    lengths_expanded = lengths.unsqueeze(1)
+    return torch.where(
+        arange < lengths_expanded,
+        lengths_expanded - 1 - arange,
+        arange,
+    )
+
+
 def flip_valid_time(
     x: Tensor,
     lengths: Optional[Tensor] = None,
     channel_first: bool = False,
+    flip_indices: Optional[Tensor] = None,
 ) -> Tensor:
     """Flip only valid time steps; padding stays at the end.
 
@@ -55,23 +74,26 @@ def flip_valid_time(
     Args:
         x: (B, L, D) if channel_first=False, or (B, D, L) if channel_first=True
         lengths: (B,) valid lengths along the time dimension; None = full flip
+        flip_indices: Optional precomputed indices from
+            :func:`build_valid_time_flip_indices`.
     """
     time_dim = 2 if channel_first else 1
-    if lengths is None:
+    if lengths is None and flip_indices is None:
         return x.flip([time_dim])
 
-    lengths = lengths.to(device=x.device, dtype=torch.long)
+    if flip_indices is not None:
+        idx = flip_indices.to(device=x.device, dtype=torch.long)
+    else:
+        lengths = lengths.to(device=x.device, dtype=torch.long)
     if channel_first:
         b, d, seq = x.shape
-        arange = torch.arange(seq, device=x.device).unsqueeze(0).expand(b, -1)
-        l_exp = lengths.unsqueeze(1)
-        idx = torch.where(arange < l_exp, l_exp - 1 - arange, arange)
+        if flip_indices is None:
+            idx = build_valid_time_flip_indices(lengths, seq, x.device)
         return x.gather(2, idx.unsqueeze(1).expand(-1, d, -1))
 
     b, seq, d = x.shape
-    arange = torch.arange(seq, device=x.device).unsqueeze(0).expand(b, -1)
-    l_exp = lengths.unsqueeze(1)
-    idx = torch.where(arange < l_exp, l_exp - 1 - arange, arange)
+    if flip_indices is None:
+        idx = build_valid_time_flip_indices(lengths, seq, x.device)
     return x.gather(1, idx.unsqueeze(-1).expand(-1, -1, d))
 
 
@@ -653,6 +675,7 @@ def ext_bimamba_inner_fn(
     if_devide_out: bool = True,
     delta_softplus: bool = True,
     seq_lens: Optional[Tensor] = None,
+    flip_indices: Optional[Tensor] = None,
 ) -> Tensor:
     """ExtBiMamba (v3): fully independent params per direction.
 
@@ -679,7 +702,9 @@ def ext_bimamba_inner_fn(
     out_f = F.linear(rearrange(out_f, "b d l -> b l d"), out_proj_weight, out_proj_bias)
 
     # Backward direction: flip valid region → in_proj_b → scan → out_proj_b → flip back
-    hidden_flipped = flip_valid_time(hidden_states, seq_lens)
+    hidden_flipped = flip_valid_time(
+        hidden_states, seq_lens, flip_indices=flip_indices
+    )
     xz_b = rearrange(
         in_proj_b_weight @ rearrange(hidden_flipped, "b l d -> d (b l)"),
         "d (b l) -> b d l", l=seqlen,
@@ -691,7 +716,7 @@ def ext_bimamba_inner_fn(
         A_b, None, None, D_b, delta_bias=dt_bias_b, delta_softplus=delta_softplus,
     )
     out_b = F.linear(rearrange(out_b, "b d l -> b l d"), out_proj_b_weight, out_proj_b_bias)
-    out_b = flip_valid_time(out_b, seq_lens)
+    out_b = flip_valid_time(out_b, seq_lens, flip_indices=flip_indices)
 
     if if_devide_out:
         return 0.5 * out_f + 0.5 * out_b

@@ -17,6 +17,7 @@ from typing import Optional
 from mamba_ssm import Mamba
 from mamba_ssm.modules.mamba2_simple import Mamba2Simple
 from .bimamba import BiMamba, BiMamba2, Block
+from .selective_scan_interface import build_valid_time_flip_indices
 from mamba_ssm.modules.mlp import GatedMLP
 
 try:
@@ -226,10 +227,24 @@ class MambaLayers(nn.Module):
         hidden_states = x
         residual = None
 
+        flip_indices = None
+        if (
+            seq_lens is not None
+            and len(self.layers) > 0
+            and isinstance(self.layers[0].mixer, BiMamba)
+            and self.layers[0].mixer.bimamba_type == "v3"
+        ):
+            flip_indices = build_valid_time_flip_indices(
+                seq_lens, hidden_states.shape[1], hidden_states.device
+            )
+
         for layer in self.layers:
+            mixer_kwargs = {"seq_lens": seq_lens}
+            if flip_indices is not None:
+                mixer_kwargs["flip_indices"] = flip_indices
             hidden_states, residual = layer(
                 hidden_states, residual, inference_params=inference_params,
-                seq_lens=seq_lens,
+                **mixer_kwargs,
             )
 
         if not self.fused_add_norm:

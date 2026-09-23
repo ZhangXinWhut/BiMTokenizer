@@ -58,11 +58,12 @@ class BiMTokenizer(nn.Module):
         return self.sample_rate
 
     @torch.inference_mode()
-    def inference_tokenize(self, x, input_lengths):
+    def inference_tokenize(self, x, input_lengths, n_codebooks=None):
         """
             Input:
                 x: Waveform tensor # (B, 1, T)
                 input_lengths: Valid length for each sample # (B,)
+                n_codebooks: Optional number of codebooks to use.
             Output:
                 dict: Contains the following key-value pairs
                     "zq": Quantized embeddings # (B, D, T)
@@ -86,10 +87,15 @@ class BiMTokenizer(nn.Module):
             encoder_output, encoder_output_length
         )
 
-        quantized_output, codes = self.quantizer(
+        nq = self._resolve_n_codebooks(
+            downsample_output.shape[0], downsample_output.device, n_codebooks
+        )
+        codes = self.quantizer.encode(
             downsample_output,
             downsample_output_length,
+            n_codebooks=nq,
         )
+        quantized_output = self.quantizer.decode(codes, n_codebooks=nq)
 
         return {
             "zq": quantized_output,
@@ -98,17 +104,19 @@ class BiMTokenizer(nn.Module):
         }
 
     @torch.inference_mode()
-    def inference_detokenize(self, codes, codes_lengths):
+    def inference_detokenize(self, codes, codes_lengths, n_codebooks=None):
         """
             Input:
                 codes: Quantization codes # (nq, B, T)
                 codes_lengths: Quantization code lengths for each sample # (B,)
+                n_codebooks: Optional number of codebooks to use.
             Output:
                 dict: Contains the following key-value pairs
                     "y": Synthesized audio waveform # (B, 1, T)
                     "output_length": Output lengths # (B,)
         """
-        zq = self.quantizer.decode(codes)
+        nq = self._resolve_n_codebooks(codes.shape[1], codes.device, n_codebooks)
+        zq = self.quantizer.decode(codes, n_codebooks=nq)
 
         upsample_output, upsample_output_length = self.upsample(zq, codes_lengths)
         decoder_output, decoder_output_length = self.decoder(
@@ -121,11 +129,21 @@ class BiMTokenizer(nn.Module):
             "output_length": vocos_output_length,
         }
 
+    def _resolve_n_codebooks(self, batch_size, device, n_codebooks=None):
+        total = int(self.nq)
+        selected = total if n_codebooks is None else int(n_codebooks)
+        if not 1 <= selected <= total:
+            raise ValueError(
+                f"n_codebooks={selected} 超出范围，须在 [1, {total}]"
+            )
+        return torch.full((batch_size,), selected, device=device, dtype=torch.long)
+
     @torch.inference_mode()
-    def encode(self, wav_list, device=torch.device("cuda")):
+    def encode(self, wav_list, device=torch.device("cuda"), n_codebooks=None):
         """
             Input:
                 wav_list: List of audio waveforms, each with potentially different length # B * (T,)
+                n_codebooks: Optional number of codebooks to use.
             Output:
                 dict: Contains the following key-value pairs
                     "codes_list": List of quantization codes # B * (nq, T)
@@ -139,7 +157,9 @@ class BiMTokenizer(nn.Module):
             wav_tensor[i, 0, :len(wav)] = wav.to(device)
             input_lengths[i] = len(wav)
 
-        result = self.inference_tokenize(wav_tensor, input_lengths)
+        result = self.inference_tokenize(
+            wav_tensor, input_lengths, n_codebooks=n_codebooks
+        )
         chunk_codes = result["codes"]
         chunk_code_lengths = result["codes_lengths"]
 
@@ -154,27 +174,34 @@ class BiMTokenizer(nn.Module):
         }
 
     @torch.inference_mode()
-    def decode(self, codes_list, device=torch.device("cuda"), wav_lengths=None):
+    def decode(
+        self, codes_list, device=torch.device("cuda"), wav_lengths=None, n_codebooks=None
+    ):
         """
             Input:
                 codes_list: List of quantization codes # B * (nq, T)
                 wav_lengths: Optional original waveform lengths; trim output to avoid
                              padding artifacts from frame stacking
+                n_codebooks: Optional number of codebooks to use.
             Output:
                 dict: Contains the following key-value pairs
                     "syn_wav_list": List of synthesized audio waveforms # B * (T,)
         """
         max_code_length = max(codes.shape[-1] for codes in codes_list)
         batch_size = len(codes_list)
+        codebook_count = max(int(codes.shape[0]) for codes in codes_list)
         codes_tensor = torch.zeros(
-            self.nq, batch_size, max_code_length, device=device, dtype=torch.long
+            codebook_count, batch_size, max_code_length,
+            device=device, dtype=torch.long,
         )
         code_lengths = torch.zeros(batch_size, dtype=torch.long, device=device)
         for i, codes in enumerate(codes_list):
-            codes_tensor[:, i, :codes.shape[-1]] = codes.to(device)
+            codes_tensor[:codes.shape[0], i, :codes.shape[-1]] = codes.to(device)
             code_lengths[i] = codes.shape[-1]
 
-        result = self.inference_detokenize(codes_tensor, code_lengths)
+        result = self.inference_detokenize(
+            codes_tensor, code_lengths, n_codebooks=n_codebooks
+        )
         syn_wav_list = []
         for i in range(batch_size):
             keep = int(code_lengths[i].item()) * self.decoder_upsample_rate

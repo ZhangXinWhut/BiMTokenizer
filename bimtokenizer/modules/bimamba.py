@@ -204,11 +204,13 @@ class BiMamba(nn.Module):
 
         self.out_proj = nn.Linear(self.d_inner, self.d_model, bias=bias, **factory_kwargs)
 
-    def forward(self, hidden_states, inference_params=None, seq_lens=None):
+    def forward(self, hidden_states, inference_params=None, seq_lens=None,
+                flip_indices=None):
         """
         Args:
             hidden_states: (batch, seqlen, d_model)
             seq_lens: (batch,) valid sequence lengths; None = legacy full flip on padding
+            flip_indices: optional precomputed valid-time flip indices
         Returns:
             (batch, seqlen, d_model)
         """
@@ -279,6 +281,7 @@ class BiMamba(nn.Module):
                     self.out_proj_b.weight, self.out_proj_b.bias,
                     if_devide_out=self.if_devide_out,
                     seq_lens=seq_lens,
+                    flip_indices=flip_indices,
                 )
         else:
             # Slow path (inference with cache or no causal_conv1d)
@@ -779,11 +782,14 @@ class Block(nn.Module):
                 residual = residual.to(torch.float32)
         else:
             fused_add_norm_fn = rms_norm_fn if isinstance(self.norm, RMSNorm) else layer_norm_fn
-            hidden_states, residual = fused_add_norm_fn(
-                hidden_states, self.norm.weight, self.norm.bias,
+            ln_kwargs = dict(
                 residual=residual, prenorm=True,
                 residual_in_fp32=self.residual_in_fp32, eps=self.norm.eps,
-                is_rms_norm=isinstance(self.norm, RMSNorm),
+            )
+            if not isinstance(self.norm, RMSNorm):
+                ln_kwargs["is_rms_norm"] = False
+            hidden_states, residual = fused_add_norm_fn(
+                hidden_states, self.norm.weight, self.norm.bias, **ln_kwargs,
             )
 
         hidden_states = self.mixer(hidden_states, inference_params=inference_params, **mixer_kwargs)
