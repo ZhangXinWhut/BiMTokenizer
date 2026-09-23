@@ -41,6 +41,38 @@ All results below are measured on LibriSpeech `test-clean` at 16 kHz. WER is mea
 | **BiMTokenizer-SenseVoice (32768+4096)** | 32768 + 4096 | 1087.5 bps | 0.86 | 0.943 | 3.459 | 2.893 | 4.20 | 2.48 |
 | **BiMTokenizer-SenseVoice (8×2048)** | 8 × 2048 | 1100 bps | 0.87 | 0.94 | 3.46 | 2.89 | 4.15 | 2.52 |
 
+### Comparison with Other Speech Tokenizers
+
+The following comparison is also evaluated on LibriSpeech `test-clean`. `N_VQ` denotes the number of VQ codebooks; frame rate is reported in tokens per second.
+
+#### 800–1100 bps
+
+| Model | Bitrate | Frame rate | N_VQ | SIM ↑ | STOI ↑ | PESQ-NB ↑ | PESQ-WB ↑ |
+|:------|--------:|-----------:|------:|------:|-------:|----------:|----------:|
+| XCodec2.0 | 800 | 50 | 1 | 0.82 | 0.92 | 3.04 | 2.43 |
+| MiMo-Audio-Tokenizer | 850 | 25 | 4 | 0.80 | 0.91 | 2.94 | 2.39 |
+| Higgs-Audio-Tokenizer | 1000 | 25 | 4 | 0.77 | 0.83 | 3.03 | 2.48 |
+| SpeechTokenizer | 1000 | 50 | 2 | 0.36 | 0.77 | 1.59 | 1.25 |
+| XY-Tokenizer | 1000 | 12.5 | 8 | 0.85 | 0.92 | 3.10 | 2.50 |
+| BigCodec | 1040 | 80 | 1 | 0.84 | 0.93 | 3.27 | 2.68 |
+| Mimi | 1100 | 12.5 | 8 | 0.74 | 0.91 | 2.80 | 2.25 |
+| MOSS-Audio-Tokenizer | 1000 | 12.5 | 8 | **0.88** | 0.94 | 3.38 | 2.87 |
+| **BiMTokenizer** | **1100** | **12.5** | **8** | **0.88** | **0.95** | **3.62** | **3.06** |
+
+#### 1500–2475 bps
+
+| Model | Bitrate | Frame rate | N_VQ | SIM ↑ | STOI ↑ | PESQ-NB ↑ | PESQ-WB ↑ |
+|:------|--------:|-----------:|------:|------:|-------:|----------:|----------:|
+| DAC | 1500 | 75 | 2 | 0.48 | 0.83 | 1.87 | 1.48 |
+| Encodec | 1500 | 75 | 2 | 0.60 | 0.85 | 1.94 | 1.56 |
+| Higgs-Audio-Tokenizer | 2000 | 25 | 8 | 0.90 | 0.85 | 3.59 | 3.11 |
+| SpeechTokenizer | 2000 | 50 | 4 | 0.66 | 0.88 | 2.38 | 1.92 |
+| Qwen3-TTS-Tokenizer | 2200 | 12.5 | 16 | **0.95** | 0.96 | 3.66 | 3.19 |
+| MiMo-Audio-Tokenizer | 2250 | 25 | 12 | 0.89 | 0.95 | 3.57 | 3.05 |
+| Mimi | 2475 | 12.5 | 18 | 0.89 | 0.94 | 3.49 | 2.97 |
+| MOSS-Audio-Tokenizer | 2000 | 12.5 | 16 | **0.95** | 0.96 | 3.78 | 3.41 |
+| **BiMTokenizer** | **2200** | **12.5** | **16** | 0.94 | **0.97** | **3.92** | **3.46** |
+
 ## 🚀 Quick Start
 
 ### Installation
@@ -77,7 +109,7 @@ python -c "import torch, causal_conv1d, mamba_ssm; print(torch.cuda.get_device_n
 
 ## Available Models 🗂️
 
-The following four checkpoints are available on [Hugging Face](https://huggingface.co/ZhangXinWhut/BiMTokenizer):
+The following five checkpoints are available on [Hugging Face](https://huggingface.co/ZhangXinWhut/BiMTokenizer):
 
 | Model | Checkpoint | Quantizer | Bitrate |
 |:------|:-----------|:----------|:-------:|
@@ -85,6 +117,7 @@ The following four checkpoints are available on [Hugging Face](https://huggingfa
 | BiMTokenizer-SenseVoice | [`bimtokenizer_sensevoice_librispeech.pt`](https://huggingface.co/ZhangXinWhut/BiMTokenizer/blob/main/sensevoice/bimtokenizer_sensevoice_librispeech.pt) | RSLQ, 5 × 196560 | 1100 bps |
 | BiMTokenizer-SenseVoice (32768+4096) | [`bimtokenizer_sensevoice_32768_4096_librispeech.pt`](https://huggingface.co/ZhangXinWhut/BiMTokenizer/blob/main/sensevoice-32768-4096/bimtokenizer_sensevoice_32768_4096_librispeech.pt) | 32768 + 4096 | 1087.5 bps |
 | BiMTokenizer-SenseVoice (8×2048) | [`bimtokenizer_sensevoice_2048_librispeech.pt`](https://huggingface.co/ZhangXinWhut/BiMTokenizer/blob/main/sensevoice-2048/bimtokenizer_sensevoice_2048_librispeech.pt) | RSLQ-no-scale, 8 × 2048 | 1100 bps |
+| BiMTokenizer-SenseVoice (16×2048) | [`bimtokenizer_sensevoice_2048_emilia2w.pt`](https://huggingface.co/ZhangXinWhut/BiMTokenizer/blob/main/sensevoice-2048/bimtokenizer_sensevoice_2048_emilia2w.pt) | RSLQ-no-scale, 16 × 2048 | 2200 bps |
 
 Codebooks are loaded from `bimtokenizer/modules/quantizer/cache/*.npy` (not stored inside the `.pt` file).
 
@@ -109,6 +142,18 @@ python inference.py \
 ```
 
 Reconstructed wavs are written to `--output_dir` (default `output_wavs/`).
+
+To run the Emilia-2W checkpoint with a selectable number of codebooks:
+
+```bash
+python inference.py \
+  --config_path config/bimtokenizer_sensevoice_2048_emilia2w.yaml \
+  --checkpoint_path weights/BiMTokenizer/sensevoice-2048/bimtokenizer_sensevoice_2048_emilia2w.pt \
+  --n_codebooks 16 \
+  --input_dir /path/to/LibriSpeech/test-clean \
+  --output_dir output_wavs \
+  --device cuda --batch_size 1
+```
 
 ## 🙏 Acknowledgements
 
